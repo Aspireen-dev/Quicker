@@ -15,9 +15,10 @@ public class GameManager : MonoBehaviour
 
     private bool isPlaying = false;
 
-    private int score = 0;
-    private float time; // 10 - 20 - 30 seconds modes
-    private float timeLeft;
+    private int nbTargets;
+    private int nbTargetsLeft;
+    private float time;
+    private float maxTime = 100f;
 
     private GameObject lastTarget = null;
 
@@ -31,49 +32,68 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isPlaying)
+        // If we're not playing, do nothing
+        if (!isPlaying)
         {
-            // ----- INPUTS -----
-            if (Input.touchCount > 0 || Input.GetMouseButtonDown(0))
-            {
+            return;
+        }
+
+        // ----- TIME -----
+        time += Time.deltaTime;
+        if (time >= maxTime)
+        {
+            time = maxTime;
+            EndGame();
+        }
+        else
+        {
+            mainPanel.UpdateTime(time);
+        }
+
+        // ----- INPUTS -----
 #if UNITY_EDITOR || UNITY_STANDALONE
-                Vector3 touchPositionOnScreen = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (!Input.GetMouseButtonDown(0))
+        {
+            return;
+        }
+        Vector3 touchPositionOnScreen = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 #elif UNITY_ANDROID
-            Vector3 touchPositionOnScreen = Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position);
+        if (Input.touchCount == 0)
+        {
+            return;
+        }
+        Vector3 touchPositionOnScreen = Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position);
 #endif
-                Vector2 touchPosition = new Vector2(touchPositionOnScreen.x, touchPositionOnScreen.y);
 
-                RaycastHit2D hit = Physics2D.Raycast(touchPosition, Vector2.zero);
-                if (hit.collider != null)
+        Vector2 touchPosition = new Vector2(touchPositionOnScreen.x, touchPositionOnScreen.y);
+
+        RaycastHit2D hit = Physics2D.Raycast(touchPosition, Vector2.zero);
+        if (hit.collider != null)
+        {
+            GameObject goHit = hit.transform.gameObject;
+            if (goHit.tag == "target")
+            {
+                nbTargetsLeft--;
+                print("nbTargets --");
+                Destroy(goHit);
+                if (nbTargetsLeft > 0)
                 {
-                    GameObject goHit = hit.transform.gameObject;
-                    if (goHit.tag == "target")
-                    {
-                        score++;
-                        print("score ++");
-                        Destroy(goHit);
-                        SpawnTarget();
-                    }
+                    SpawnTarget();
                 }
-            }
-
-            // ----- TIME -----
-            timeLeft -= Time.deltaTime;
-            if (timeLeft <= 0f)
-            {
-                EndGame();
-            }
-            else
-            {
-                mainPanel.UpdateTime(timeLeft);
+                else
+                {
+                    EndGame();
+                    return;
+                }
             }
         }
     }
 
-    public void StartGame(int duration)
+    public void StartGame(int targets)
     {
-        time = duration;
-        timeLeft = time;
+        nbTargets = targets;
+        nbTargetsLeft = nbTargets;
+        time = 0;
         mainPanel.HideMenu();
         SpawnTarget();
         isPlaying = true;
@@ -92,16 +112,16 @@ public class GameManager : MonoBehaviour
         isPlaying = false;
         Destroy(lastTarget);
 
-        string bestScoreTime = "bestScore" + time;
-        int bestScore = PlayerPrefs.GetInt(bestScoreTime, 0);
+        string bestTimeMode = "bestTime" + nbTargets;
+        float bestTimeSaved = float.Parse(PlayerPrefs.GetString(bestTimeMode, maxTime.ToString("F")));
 
-        if (bestScore < score)
+        if (bestTimeSaved > time)
         {
-            bestScore = score;
-            PlayerPrefs.SetInt(bestScoreTime, bestScore);
+            bestTimeSaved = time;
+            PlayerPrefs.SetString(bestTimeMode, time.ToString("F"));
         }
 
-        mainPanel.EndGame(score, bestScore);
+        mainPanel.EndGame(time, bestTimeSaved);
     }
 
 }

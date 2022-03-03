@@ -9,7 +9,7 @@ public class MainPanel : MonoBehaviour
     [SerializeField]
     private GameObject menu;
     [SerializeField]
-    private GameObject playTimes;
+    private GameObject nbTargets;
     [SerializeField]
     private TMP_Text timeText;
     [SerializeField]
@@ -21,12 +21,12 @@ public class MainPanel : MonoBehaviour
     public void OnPlayBtnClick(GameObject btn)
     {
         btn.SetActive(false);
-        playTimes.SetActive(true);
+        nbTargets.SetActive(true);
     }
 
-    public void OnNbSecClick(int duration)
+    public void OnNbTargetsClick(int nbTargets)
     {
-        gameManager.StartGame(duration);
+        gameManager.StartGame(nbTargets);
     }
 
     public void HideMenu()
@@ -35,10 +35,10 @@ public class MainPanel : MonoBehaviour
         timeText.gameObject.SetActive(true);
     }
 
-    public void EndGame(int score, int bestScore)
+    public void EndGame(float time, float bestTime)
     {
         endGamePanel.gameObject.SetActive(true);
-        endGamePanel.UpdateScore(score, bestScore);
+        endGamePanel.ShowResult(time, bestTime);
     }
 
     /*public void UpdateScore(int score)
@@ -48,6 +48,6 @@ public class MainPanel : MonoBehaviour
 
     public void UpdateTime(float time)
     {
-        timeText.text = time.ToString("F1");
+        timeText.text = time.ToString("F");
     }
 }

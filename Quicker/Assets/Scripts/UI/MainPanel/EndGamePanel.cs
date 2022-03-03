@@ -7,20 +7,14 @@ using UnityEngine.SceneManagement;
 public class EndGamePanel : MonoBehaviour
 {
     [SerializeField]
-    private TMP_Text scoreText;
+    private TMP_Text timeText;
     [SerializeField]
-    private TMP_Text bestScoreText;
+    private TMP_Text bestTimeText;
 
-    // Start is called before the first frame update
-    void Start()
+    public void ShowResult(float time, float bestTime)
     {
-        
-    }
-
-    public void UpdateScore(int score, int bestScore)
-    {
-        scoreText.text = "SCORE :\r\n" + score.ToString();
-        bestScoreText.text = "BEST SCORE :\r\n" + bestScore.ToString();
+        timeText.text = "TIME :\r\n" + time.ToString("F");
+        bestTimeText.text = "BEST TIME :\r\n" + bestTime.ToString("F");
     }
 
     public void OnMenuBtnClick()
