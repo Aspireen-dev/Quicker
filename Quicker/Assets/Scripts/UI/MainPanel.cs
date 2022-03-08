@@ -12,6 +12,7 @@ public class MainPanel : MonoBehaviour
     private GameObject nbTargets;
     [SerializeField]
     private TMP_Text timeText;
+
     [SerializeField]
     private EndGamePanel endGamePanel;
 
@@ -35,16 +36,16 @@ public class MainPanel : MonoBehaviour
         timeText.gameObject.SetActive(true);
     }
 
+    public void OnTargetBtnClick()
+    {
+        gameManager.TargetHit();
+    }
+
     public void EndGame(float time, float bestTime)
     {
         endGamePanel.gameObject.SetActive(true);
         endGamePanel.ShowResult(time, bestTime);
     }
-
-    /*public void UpdateScore(int score)
-    {
-        scoreText.text = score.ToString();
-    }*/
 
     public void UpdateTime(float time)
     {

@@ -5,13 +5,14 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     [SerializeField]
-    private GameObject targetPrefab; // Size of target : 150px * 150px
+    private GameObject target; // Size of target : 150px * 150px
     [SerializeField]
     private MainPanel mainPanel;
 
     // Default values for 1080 * 1920 --- width and height divided by 2 and minus 100
-    private float widthLimit = 440f;
-    private float heightLimit = 860f;
+    private float widthLimit;
+    private float heightLimit;
+    private float topOffset = 300f;
 
     private bool isPlaying = false;
 
@@ -20,13 +21,12 @@ public class GameManager : MonoBehaviour
     private float time;
     private float maxTime = 100f;
 
-    private GameObject lastTarget = null;
-
     // Start is called before the first frame update
     void Start()
     {
-        widthLimit = (Screen.width / 2) - 100f;
-        heightLimit = (Screen.height / 2) - 100f;
+        Rect screen = GameObject.Find("Canvas").GetComponent<RectTransform>().rect;
+        widthLimit = (screen.width / 2) - 150f;
+        heightLimit = (screen.height / 2) - 150f;
     }
 
     // Update is called once per frame
@@ -50,6 +50,7 @@ public class GameManager : MonoBehaviour
             mainPanel.UpdateTime(time);
         }
 
+        /*
         // ----- INPUTS -----
 #if UNITY_EDITOR || UNITY_STANDALONE
         if (!Input.GetMouseButtonDown(0))
@@ -70,48 +71,59 @@ public class GameManager : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(touchPosition, Vector2.zero);
         if (hit.collider != null)
         {
-            GameObject goHit = hit.transform.gameObject;
-            if (goHit.tag == "target")
+            if (hit.collider.tag == "target")
             {
-                nbTargetsLeft--;
-                print("nbTargets --");
-                Destroy(goHit);
-                if (nbTargetsLeft > 0)
-                {
-                    SpawnTarget();
-                }
-                else
-                {
-                    EndGame();
-                    return;
-                }
+                TargetHit();
             }
         }
+        */
     }
 
     public void StartGame(int targets)
     {
+        mainPanel.HideMenu();
+
         nbTargets = targets;
         nbTargetsLeft = nbTargets;
+
         time = 0;
-        mainPanel.HideMenu();
-        SpawnTarget();
+
+        target.SetActive(true);
+        SetNewTargetPosition();
+
         isPlaying = true;
     }
 
-    private void SpawnTarget()
+    public void TargetHit()
     {
-        lastTarget = Instantiate(targetPrefab, Camera.main.transform);
+        nbTargetsLeft--;
+
+        if (nbTargetsLeft == 0)
+        {
+            EndGame();
+            return;
+        }
+
+        SetNewTargetPosition();
+    }
+
+    private void SetNewTargetPosition()
+    {
         float randomWidth = Random.Range(-widthLimit, widthLimit);
-        float randomHeight = Random.Range(-heightLimit, heightLimit - 200f); // Offset on the top of the screen (200px)
-        lastTarget.transform.localPosition = new Vector3(randomWidth, randomHeight, 10);
+        float randomHeight = Random.Range(-heightLimit, heightLimit - topOffset); // Offset on the top of the screen (300px)
+        target.transform.localPosition = new Vector3(randomWidth, randomHeight, 0);
     }
 
     private void EndGame()
     {
         isPlaying = false;
-        Destroy(lastTarget);
+        target.SetActive(false);
 
+        mainPanel.EndGame(time, GetBestTimeSaved());
+    }
+
+    private float GetBestTimeSaved()
+    {
         string bestTimeMode = "bestTime" + nbTargets;
         float bestTimeSaved = float.Parse(PlayerPrefs.GetString(bestTimeMode, maxTime.ToString("F")));
 
@@ -121,7 +133,7 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.SetString(bestTimeMode, time.ToString("F"));
         }
 
-        mainPanel.EndGame(time, bestTimeSaved);
+        return bestTimeSaved;
     }
 
 }
