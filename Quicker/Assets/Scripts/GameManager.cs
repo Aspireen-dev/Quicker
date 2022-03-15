@@ -1,35 +1,29 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField]
-    private GameObject target; // Size of target : 150px * 150px
-    [SerializeField]
-    private MainPanel mainPanel;
+    private GamePanel gamePanel;
 
-    // Default values for 1080 * 1920 --- width and height divided by 2 and minus 100
-    private float widthLimit;
-    private float heightLimit;
-    private float topOffset = 300f;
+    private int nbTargets; // Number of targets to hit, got with scene name : "10" - "25" - "50"
+    private int nbTargetsLeft;
+
+    private float time = 0f;
+    private float maxTime;
 
     private bool isPlaying = false;
 
-    private int nbTargets;
-    private int nbTargetsLeft;
-    private float time;
-    private float maxTime = 100f;
-
-    // Start is called before the first frame update
     void Start()
     {
-        Rect screen = GameObject.Find("Canvas").GetComponent<RectTransform>().rect;
-        widthLimit = (screen.width / 2) - 150f;
-        heightLimit = (screen.height / 2) - 150f;
+        nbTargets = int.Parse(SceneManager.GetActiveScene().name);
+        nbTargetsLeft = nbTargets;
+        maxTime = nbTargets * 2;
+
+        gamePanel.SetNewTargetPosition();
+        isPlaying = true;
     }
 
-    // Update is called once per frame
     void Update()
     {
         // If we're not playing, do nothing
@@ -38,19 +32,57 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // ----- TIME -----
+        UpdateTime();
+        //CheckForInput();
+    }
+
+    private void UpdateTime()
+    {
         time += Time.deltaTime;
         if (time >= maxTime)
         {
             time = maxTime;
             EndGame();
         }
-        else
+        gamePanel.UpdateTime(time);
+    }
+
+    public void TargetHit()
+    {
+        nbTargetsLeft--;
+
+        if (nbTargetsLeft == 0)
         {
-            mainPanel.UpdateTime(time);
+            EndGame();
+            return;
         }
 
-        /*
+        gamePanel.SetNewTargetPosition();
+    }
+
+    private void EndGame()
+    {
+        isPlaying = false;
+        gamePanel.EndGame(time, GetBestTimeSaved());
+    }
+
+    private float GetBestTimeSaved()
+    {
+        string bestTimeMode = "bestTime" + nbTargets;
+        float bestTimeSaved = float.Parse(PlayerPrefs.GetString(bestTimeMode, maxTime.ToString("F")));
+
+        if (bestTimeSaved > time)
+        {
+            bestTimeSaved = time;
+            PlayerPrefs.SetString(bestTimeMode, time.ToString("F"));
+        }
+
+        return bestTimeSaved;
+    }
+
+    /*
+    private void CheckForInput()
+    {
         // ----- INPUTS -----
 #if UNITY_EDITOR || UNITY_STANDALONE
         if (!Input.GetMouseButtonDown(0))
@@ -76,64 +108,7 @@ public class GameManager : MonoBehaviour
                 TargetHit();
             }
         }
-        */
     }
-
-    public void StartGame(int targets)
-    {
-        mainPanel.HideMenu();
-
-        nbTargets = targets;
-        nbTargetsLeft = nbTargets;
-
-        time = 0;
-
-        target.SetActive(true);
-        SetNewTargetPosition();
-
-        isPlaying = true;
-    }
-
-    public void TargetHit()
-    {
-        nbTargetsLeft--;
-
-        if (nbTargetsLeft == 0)
-        {
-            EndGame();
-            return;
-        }
-
-        SetNewTargetPosition();
-    }
-
-    private void SetNewTargetPosition()
-    {
-        float randomWidth = Random.Range(-widthLimit, widthLimit);
-        float randomHeight = Random.Range(-heightLimit, heightLimit - topOffset); // Offset on the top of the screen (300px)
-        target.transform.localPosition = new Vector3(randomWidth, randomHeight, 0);
-    }
-
-    private void EndGame()
-    {
-        isPlaying = false;
-        target.SetActive(false);
-
-        mainPanel.EndGame(time, GetBestTimeSaved());
-    }
-
-    private float GetBestTimeSaved()
-    {
-        string bestTimeMode = "bestTime" + nbTargets;
-        float bestTimeSaved = float.Parse(PlayerPrefs.GetString(bestTimeMode, maxTime.ToString("F")));
-
-        if (bestTimeSaved > time)
-        {
-            bestTimeSaved = time;
-            PlayerPrefs.SetString(bestTimeMode, time.ToString("F"));
-        }
-
-        return bestTimeSaved;
-    }
+    */
 
 }
